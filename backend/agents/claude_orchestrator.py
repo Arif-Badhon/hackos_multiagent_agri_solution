@@ -2,25 +2,38 @@ import os
 import json
 import logging
 from typing import Optional, Dict, Any
+from dotenv import load_dotenv
 from anthropic import AsyncAnthropic
 from schemas import ClaudeAdvisoryResult
 
+# Load environment variables from .env
+load_dotenv()
+
 logger = logging.getLogger("ondera.agents.claude")
 
-# Environment configuration
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-7-sonnet-20250219")
+# Global client cache
+_anthropic_client_instance: Optional[AsyncAnthropic] = None
 
-# Initialize official Anthropic Async Client
-anthropic_client: Optional[AsyncAnthropic] = None
-if ANTHROPIC_API_KEY and not ANTHROPIC_API_KEY.startswith("your_anthropic_api_key"):
-    try:
-        anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
-        logger.info(f"Initialized Anthropic client with model {CLAUDE_MODEL}")
-    except Exception as e:
-        logger.warning(f"Failed to initialize Anthropic client: {e}. Fallback heuristics will be active.")
-else:
-    logger.info("No active ANTHROPIC_API_KEY detected. Fallback agronomic expert engine will be active.")
+
+def get_anthropic_client() -> Optional[AsyncAnthropic]:
+    """
+    Returns an active AsyncAnthropic client if ANTHROPIC_API_KEY is configured.
+    Dynamically loads from environment or .env.
+    """
+    global _anthropic_client_instance
+    if _anthropic_client_instance is not None:
+        return _anthropic_client_instance
+
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if api_key and not api_key.startswith("your_anthropic_api_key") and len(api_key) > 20:
+        try:
+            _anthropic_client_instance = AsyncAnthropic(api_key=api_key)
+            logger.info("Initialized Anthropic Claude async client successfully.")
+            return _anthropic_client_instance
+        except Exception as e:
+            logger.warning(f"Failed to initialize Anthropic client: {e}. Fallback heuristics active.")
+            return None
+    return None
 
 
 ONDERA_AGRONOMY_SYSTEM_PROMPT = """You are the Senior Coffee Agronomy Intelligence Agent for the World Bank Small AI for Development 'Ondera Agro-Mesh' system.
@@ -130,9 +143,10 @@ async def generate_agronomic_advisory(dossier_data: Any) -> ClaudeAdvisoryResult
     geo_lon = getattr(dossier_data, "geo_lon", 38.5412)
     altitude = getattr(dossier_data, "altitude_m", 1840.0) or 1840.0
 
-    # If Anthropic client is not configured, seamlessly return domain heuristic advisory
-    if not anthropic_client:
-        logger.info("Using domain agronomic heuristic engine for advisory generation.")
+    # Obtain active Anthropic client
+    client = get_anthropic_client()
+    if not client:
+        logger.info("Anthropic client inactive. Using domain agronomic heuristic engine.")
         return _generate_fallback_advisory(
             farmer_id=farmer_id,
             farmer_name=farmer_name,
@@ -141,6 +155,8 @@ async def generate_agronomic_advisory(dossier_data: Any) -> ClaudeAdvisoryResult
             symptoms=symptoms,
             altitude=altitude,
         )
+
+    model_name = os.getenv("CLAUDE_MODEL", "claude-3-7-sonnet-20250219")
 
     # Prepare message for Claude API
     user_prompt = f"""Incoming SyncDossier Payload:
@@ -154,10 +170,10 @@ async def generate_agronomic_advisory(dossier_data: Any) -> ClaudeAdvisoryResult
 Analyze this field record and generate the localized JSON advisory for the District Extension Officer and farmer."""
 
     try:
-        logger.info(f"Calling Claude model {CLAUDE_MODEL} for dossier from {farmer_id}...")
-        response = await anthropic_client.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=800,
+        logger.info(f"Calling Claude model {model_name} for dossier from {farmer_id}...")
+        response = await client.messages.create(
+            model=model_name,
+            max_tokens=2500,
             temperature=0.2,
             system=ONDERA_AGRONOMY_SYSTEM_PROMPT,
             messages=[
@@ -171,14 +187,11 @@ Analyze this field record and generate the localized JSON advisory for the Distr
                 content_text += block.text
 
         content_text = content_text.strip()
-        # Remove any surrounding markdown ```json fences if Claude included them
-        if content_text.startswith("```json"):
-            content_text = content_text[7:]
-        if content_text.startswith("```"):
-            content_text = content_text[3:]
-        if content_text.endswith("```"):
-            content_text = content_text[:-3]
-        content_text = content_text.strip()
+        # Find outer JSON braces if extra text was included
+        start_idx = content_text.find("{")
+        end_idx = content_text.rfind("}")
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            content_text = content_text[start_idx : end_idx + 1]
 
         data = json.loads(content_text)
         return ClaudeAdvisoryResult(
