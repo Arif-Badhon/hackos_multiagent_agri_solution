@@ -56,18 +56,26 @@ app = FastAPI(
 )
 
 # CORS Configuration
-# Ensures Next.js local dev server (http://localhost:3000) and production domains can communicate
-cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+# Ensures Next.js local dev server and Vercel production domains can communicate
+cors_origins_env = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,https://hackoshackhathon.vercel.app,https://ondera-agro-mesh.vercel.app",
+)
 allowed_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
 
-# Guarantee localhost:3000 is always allowed for local development
-for default_origin in ["http://localhost:3000", "http://127.0.0.1:3000"]:
+# Guarantee default development and production URLs are present
+for default_origin in [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://hackoshackhathon.vercel.app",
+]:
     if default_origin not in allowed_origins:
         allowed_origins.append(default_origin)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,7 +85,7 @@ app.add_middleware(
 app.include_router(sync_router)
 
 
-@app.get("/", tags=["Root"])
+@app.api_route("/", methods=["GET", "HEAD"], tags=["Root"])
 async def root():
     return {
         "system": "Ondera Agro-Mesh Edge Multi-Agent Mesh",
@@ -88,7 +96,7 @@ async def root():
     }
 
 
-@app.get("/api/health", status_code=status.HTTP_200_OK, tags=["Health"])
+@app.api_route("/api/health", methods=["GET", "HEAD"], status_code=status.HTTP_200_OK, tags=["Health"])
 async def health_check():
     """
     Healthcheck endpoint verifying database connectivity and service readiness.
@@ -111,5 +119,5 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.getenv("BACKEND_PORT", 8000))
+    port = int(os.getenv("PORT", os.getenv("BACKEND_PORT", 8000)))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

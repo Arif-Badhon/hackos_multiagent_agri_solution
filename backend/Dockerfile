@@ -24,5 +24,5 @@ COPY . .
 # Expose FastAPI port
 EXPOSE 8000
 
-# Start Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start Uvicorn with dynamic cloud PORT support (defaults to 8000)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
