@@ -73,7 +73,10 @@ async def init_db() -> None:
     logger.info("Initializing PostgreSQL schema for KrishiKotha AI...")
     async with engine.begin() as conn:
         # Import models so that Base.metadata is populated
-        import models  # noqa: F401
+        try:
+            import models  # noqa: F401
+        except ImportError:
+            from backend import models  # noqa: F401
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database schema initialized successfully.")
 
