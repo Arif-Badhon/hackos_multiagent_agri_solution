@@ -11,8 +11,13 @@
 
 ---
 
+> 🚀 **New to this project?** Check out the [**Beginner's Guide & 3-Minute Live Demo (GETTING_STARTED.md)**](GETTING_STARTED.md) for a plain-English introduction, the story of Farmer Noor, and an interactive test walkthrough!
+
+---
+
 ## 📖 Table of Contents
-1. [Executive Summary & Problem Statement](#-executive-summary--problem-statement)
+1. [Beginner's Guide & Live Demo](GETTING_STARTED.md)
+2. [Executive Summary & Problem Statement](#-executive-summary--problem-statement)
 2. [High-Level Architecture](#-high-level-architecture)
 3. [Multi-Agent Design System](#-multi-agent-design-system)
 4. [Offline-First Store-and-Forward Topology](#-offline-first-store-and-forward-topology)
