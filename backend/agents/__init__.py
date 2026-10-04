@@ -1,3 +1,3 @@
 """
-Multi-Agent Orchestration Package for Ondera Agro-Mesh
+Multi-Agent Orchestration Package for KrishiKotha AI
 """

@@ -6,7 +6,7 @@ PIP ?= pip
 DOCKER_COMPOSE ?= docker compose
 
 help:
-	@echo "Ondera Agro-Mesh: Offline-First Edge Multi-Agent Mesh"
+	@echo "KrishiKotha AI: Offline-First Edge Multi-Agent Mesh"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  make setup       Install backend and frontend dependencies"

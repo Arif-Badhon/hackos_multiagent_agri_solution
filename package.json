@@ -1,8 +1,8 @@
 {
-  "name": "ondera-agro-mesh",
+  "name": "krishikotha-ai",
   "version": "1.0.0",
   "private": true,
-  "description": "Offline-First Edge Multi-Agent Mesh for Ondera Smallholder Coffee Farmers",
+  "description": "Offline-First Edge Multi-Agent Mesh for Smallholder Coffee Farmers in Bandarban, Bangladesh",
   "workspaces": [
     "frontend"
   ],

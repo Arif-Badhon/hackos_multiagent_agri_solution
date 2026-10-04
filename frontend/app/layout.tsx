@@ -10,9 +10,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Ondera Agro-Mesh | Offline-First Multi-Agent System",
+  title: "KrishiKotha AI | Offline-First Multi-Agent System",
   description:
-    "Store-and-forward edge multi-agent mesh for Ondera highlands coffee farmers. Offline diagnostics, Claude agronomic advisory, and market price protection.",
+    "Offline-first edge multi-agent mesh & multimodal streaming for smallholder coffee farmers in Bandarban, Bangladesh.",
   manifest: "/manifest.json",
   icons: {
     icon: "/icons/icon.svg",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Ondera Agro",
+    title: "KrishiKotha AI",
   },
 };
 

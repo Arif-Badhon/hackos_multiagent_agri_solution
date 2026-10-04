@@ -70,7 +70,7 @@ async def init_db() -> None:
     Initializes database tables asynchronously using SQLAlchemy metadata.
     Called during FastAPI lifespan startup.
     """
-    logger.info("Initializing PostgreSQL schema for Ondera Agro-Mesh...")
+    logger.info("Initializing PostgreSQL schema for KrishiKotha AI...")
     async with engine.begin() as conn:
         # Import models so that Base.metadata is populated
         import models  # noqa: F401

@@ -116,14 +116,14 @@ export default function Home() {
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-lg font-extrabold tracking-tight text-white">
-                  Ondera Agro-Mesh
+                  KrishiKotha AI
                 </h1>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
                   World Bank Small AI
                 </span>
               </div>
               <p className="text-xs text-emerald-300/70">
-                Offline-First Multi-Agent Agronomic Mesh &bull; Ondera Highlands (1,840m)
+                Offline-First Multi-Agent Agronomic Mesh &bull; Bandarban Hill Tracts
               </p>
             </div>
           </div>
@@ -473,7 +473,7 @@ export default function Home() {
                       <button
                         onClick={() =>
                           alert(
-                            `SMS Dispatch simulated: Guidance queued for ${selectedDossier.farmer_name} (+251-91-XXX-XXXX) over Ondera SMS gateway.`
+                            `SMS Dispatch simulated: Guidance queued for ${selectedDossier.farmer_name} over KrishiKotha SMS gateway.`
                           )
                         }
                         className="flex-1 flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-xl text-xs shadow-lg transition-all"
@@ -512,7 +512,7 @@ export default function Home() {
               <Info className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold text-white">Offline-First Field Simulation:</span>{" "}
-                Coffee farmer Noor enters crop health observations in deep mountain plots where cellular coverage is unavailable. The dossier is stored safely in the device&apos;s Store-and-Forward Vault and synced when reconnecting with an Ondera Edge Mesh relay.
+                Coffee farmer Noor enters crop health observations in deep mountain plots where cellular coverage is unavailable. The dossier is stored safely in the device&apos;s Store-and-Forward Vault and synced when reconnecting with a KrishiKotha Edge Mesh relay.
               </div>
             </div>
 
@@ -530,7 +530,7 @@ export default function Home() {
           <div className="bg-[#0A281B] border border-[#13422E] rounded-2xl p-8 space-y-6">
             <div>
               <h2 className="text-xl font-bold text-white">
-                Ondera Agro-Mesh: System Architecture
+                KrishiKotha AI: System Architecture
               </h2>
               <p className="text-xs text-emerald-300/70 mt-1">
                 World Bank Small AI for Development Hackathon Specification

@@ -1,4 +1,4 @@
-# ☕ Krishikotha AI
+# ☕ KrishiKotha AI
 
 ### Offline-First Edge Multi-Agent Mesh & Multimodal Streaming for Smallholder Coffee Cultivation in Bandarban, Bangladesh
 
@@ -53,9 +53,9 @@ However, smallholder coffee growers in Bandarban face severe operational bottlen
 3. **Pulping & Drying Machine Deficit**: Smallholders lack mechanical pulpers and solar drying houses. Unable to process fresh cherries on-site, they are forced to sell raw cherries at rock-bottom prices to predatory local middlemen (*farias*).
 4. **Language & Literacy Barriers**: Smallholder farmers require intuitive, zero-typing interactions in standard Bengali (**Bangla**) with visual evidence.
 
-### The Solution: Ondera Agro-Mesh (DAE Bandarban Edition)
+### The Solution: KrishiKotha AI (DAE Bandarban Edition)
 
-Ondera Agro-Mesh addresses these acute bottlenecks through a unified edge multi-agent system:
+KrishiKotha AI addresses these acute bottlenecks through a unified edge multi-agent system:
 
 - **Mobile Camera Capture (`capture="environment"`)**: Mobile-first photo capture of foliar symptoms, mealybug clusters, and cherry dieback.
 - **Native Bangla Speech Recognition (`bn-BD`)**: High-accuracy spoken Bengali transcription directly in the mobile browser using the native Web Speech API.
@@ -67,7 +67,7 @@ Ondera Agro-Mesh addresses these acute bottlenecks through a unified edge multi-
 
 ## 🇧🇩 Local Constraints & The DAE Bandarban Challenge
 
-| Local Challenge in Bandarban | Agronomic / Market Impact | Ondera Agro-Mesh Countermeasure |
+| Local Challenge in Bandarban | Agronomic / Market Impact | KrishiKotha AI Countermeasure |
 | :--- | :--- | :--- |
 | **Mealybug (মিলিবাগ) Infestation** | Waxy white insect clusters feed on tender shoots and cherry stems, transmitting sooty mold. | Visual image detection via Claude 3.5 Sonnet; organic neem-oil detergent spray protocol and biological ant-barrier instructions. |
 | **Arabica Dieback (ডাইব্যাক)** | Fungal pathogen (*Colletotrichum*) aggravated by heat stress causes terminal twigs to dry and turn black. | Pruning 2-3 inches below infected wood, flame sanitization, and copper oxychloride paste application. |
@@ -277,8 +277,8 @@ curl -X POST http://localhost:8000/api/sync/stream \
 ### 1. Clone & Configure Environment
 
 ```bash
-git clone https://github.com/Arif-Badhon/hackos_multiagent_agri_solution.git ondera-agro-mesh
-cd ondera-agro-mesh
+git clone https://github.com/Arif-Badhon/hackos_multiagent_agri_solution.git krishikotha-ai
+cd krishikotha-ai
 
 # Configure environment files
 cp .env.example .env
@@ -390,7 +390,7 @@ docker run -p 8000:8000 \
 ## 📁 Repository Structure
 
 ```
-ondera-agro-mesh/
+krishikotha-ai/
 ├── docker-compose.yml              # Local PostgreSQL 15 Alpine container
 ├── Makefile                        # Dev commands (make dev, make seed, make up)
 ├── package.json                    # Root monorepo workspaces & scripts

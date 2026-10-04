@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     FastAPI lifespan context manager: handles startup database initialization
     and graceful shutdown connection disposal.
     """
-    logger.info("Starting Ondera Agro-Mesh Backend Gateway...")
+    logger.info("Starting KrishiKotha AI Backend Gateway...")
     try:
         await init_db()
         logger.info("PostgreSQL schema successfully connected and verified.")
@@ -37,15 +37,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield
 
-    logger.info("Shutting down Ondera Agro-Mesh Gateway...")
+    logger.info("Shutting down KrishiKotha AI Gateway...")
     await close_db()
 
 
 # Initialize FastAPI Application
 app = FastAPI(
-    title="Ondera Agro-Mesh: Edge Multi-Agent Sync Gateway",
+    title="KrishiKotha AI: Edge Multi-Agent Sync Gateway",
     description=(
-        "Store-and-Forward sync gateway for smallholder coffee farmers in Ondera Highlands. "
+        "Store-and-Forward sync gateway for smallholder coffee farmers in Bandarban, Bangladesh. "
         "Processes offline diagnostic dossiers from edge nodes and orchestrates Claude AI "
         "agronomic advisories for District Extension Officers."
     ),
@@ -88,11 +88,11 @@ app.include_router(sync_router)
 @app.api_route("/", methods=["GET", "HEAD"], tags=["Root"])
 async def root():
     return {
-        "system": "Ondera Agro-Mesh Edge Multi-Agent Mesh",
+        "system": "KrishiKotha AI Edge Multi-Agent Mesh",
         "role": "Store-and-Forward Cloud Gateway",
         "docs": "/docs",
         "status": "online",
-        "coffee_region": "Ondera Highlands (Elev. 1,840m)",
+        "coffee_region": "Bandarban Hill Tracts, Bangladesh",
     }
 
 

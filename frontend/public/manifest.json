@@ -1,7 +1,7 @@
 {
-  "name": "Ondera Agro-Mesh | Offline Edge Farmer",
-  "short_name": "OnderaAgro",
-  "description": "Offline-First Multi-Agent Agronomic Diagnostics and Store-and-Forward Mesh for Coffee Farmers",
+  "name": "KrishiKotha AI | Offline Edge Farmer",
+  "short_name": "KrishiKotha",
+  "description": "Offline-First Multi-Agent Agronomic Diagnostics and Store-and-Forward Mesh for Coffee Farmers in Bandarban, Bangladesh",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#062217",

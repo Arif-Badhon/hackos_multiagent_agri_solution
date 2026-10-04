@@ -547,7 +547,7 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
           {/* Footnote */}
           <div className="pt-3 border-t border-gray-100 dark:border-[#13422E] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-gray-500 dark:text-emerald-400/60">
             <span>
-              তথ্যসূত্র: কৃষি সম্প্রসারণ অধিদপ্তর (DAE) বান্দরবান ও বিশ্বব্যাংক স্মল এআই অ্যাগ্রো-মেশ।
+              তথ্যসূত্র: কৃষি সম্প্রসারণ অধিদপ্তর (DAE) বান্দরবান ও বিশ্বব্যাংক স্মল এআই KrishiKotha AI।
             </span>
             <span className="text-emerald-600 dark:text-emerald-400 font-medium">
               অফলাইন-ফার্স্ট ক্যাশড রেজাল্ট

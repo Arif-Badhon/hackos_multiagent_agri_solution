@@ -1,3 +1,3 @@
 """
-API Routes Package for Ondera Agro-Mesh
+API Routes Package for KrishiKotha AI
 """

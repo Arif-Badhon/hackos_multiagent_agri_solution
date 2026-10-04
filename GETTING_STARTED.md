@@ -1,4 +1,4 @@
-# ☕ Welcome to Ondera Agro-Mesh (DAE Bandarban Edition)!
+# ☕ Welcome to KrishiKotha AI!
 ### A Beginner's Guide & Overview
 **World Bank Small AI for Development Hackathon**
 
@@ -6,7 +6,7 @@
 
 ## 🌟 What is this project?
 
-**Ondera Agro-Mesh** is an **offline-first, multimodal AI extension system** designed to assist smallholder coffee farmers in the hill tract regions of **Bandarban, Bangladesh**, where cellular coverage is weak or non-existent.
+**KrishiKotha AI** is an **offline-first, multimodal AI extension system** designed to assist smallholder coffee farmers in the hill tract regions of **Bandarban, Bangladesh**, where cellular coverage is weak or non-existent.
 
 It combines:
 1. **Mobile Crop Camera Capture (`capture="environment"`)**: Farmers can snap clear photos of infected coffee leaves, mealybug clusters, and dying branches right in the field.
@@ -26,7 +26,7 @@ However, farmers face critical local bottlenecks:
 - **Pulping & Drying Deficit**: Remote mountain communities lack mechanical wet-pulping machines and solar drying floors. Because raw coffee cherries ferment rapidly, farmers are coerced into selling freshly picked cherries at giveaway prices to local middlemen (*farias*).
 - **Zero Signal in the Hills**: Deep mountain plots have no cellular data. When disease strikes, farmers cannot access agronomic advice.
 
-**Ondera Agro-Mesh provides an expert DAE agricultural extension officer right on the farmer's mobile phone — in native Bengali.**
+**KrishiKotha AI provides an expert DAE agricultural extension officer right on the farmer's mobile phone — in native Bengali.**
 
 ---
 
@@ -103,8 +103,8 @@ Extension officers monitor outbreak triage ──► Coordinate collective pulpi
 
 ### 1. Download & Configure
 ```bash
-git clone https://github.com/Arif-Badhon/hackos_multiagent_agri_solution.git ondera-agro-mesh
-cd ondera-agro-mesh
+git clone https://github.com/Arif-Badhon/hackos_multiagent_agri_solution.git krishikotha-ai
+cd krishikotha-ai
 
 cp .env.example .env
 cp backend/.env.example backend/.env
