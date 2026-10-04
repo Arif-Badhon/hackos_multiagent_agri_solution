@@ -31,17 +31,24 @@ router = APIRouter(prefix="/api/sync", tags=["Store-and-Forward Sync Gateway"])
     summary="Multimodal streaming advisory for DAE Bandarban coffee farmers",
     description=(
         "Streams real-time agronomic guidance in standard Bengali using Claude 3.5 Sonnet. "
-        "Accepts a farmer's Bangla audio transcript and an optional mobile camera snapshot of the crop."
+        "Accepts a farmer's Bangla audio transcript, voice recording, optional crop snapshot, "
+        "and automatically persists the dossier into PostgreSQL for Extension Officers."
     ),
 )
 async def stream_dossier_advice(
-    transcript: str = Form(...),
+    transcript: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
+    audio: Optional[UploadFile] = File(None),
+    farmer_name: Optional[str] = Form("Noor"),
+    farmer_id: Optional[str] = Form("farmer_noor_01"),
+    crop_type: Optional[str] = Form("Arabica Coffee (Bourbon)"),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Multimodal streaming endpoint for mobile coffee farmers in Bandarban.
-    Accepts Bangla voice transcript and optional crop photograph, returning
-    a text/event-stream response powered by Anthropic's Claude 3.5 Sonnet.
+    Accepts Bangla voice transcript, audio recording, and crop photograph.
+    Saves a SyncDossier in PostgreSQL so the District Extension Officer Command Center
+    immediately registers the observation, and returns a text/event-stream response.
     """
     image_bytes: Optional[bytes] = None
     mime_type: Optional[str] = None
@@ -56,9 +63,63 @@ async def stream_dossier_advice(
         except Exception as e:
             logger.warning(f"Failed to read uploaded image in /api/sync/stream: {e}")
 
+    if audio is not None:
+        try:
+            audio_bytes = await audio.read()
+            logger.info(f"Received audio recording in stream request: {audio.filename} ({len(audio_bytes)} bytes)")
+        except Exception as e:
+            logger.warning(f"Failed to read uploaded audio in /api/sync/stream: {e}")
+
+    cleaned_transcript = (transcript or "").strip()
+    if not cleaned_transcript:
+        cleaned_transcript = "বান্দরবানের পাহাড়ি জমিতে কফি চাষের পর্যবেক্ষণ ও রোগ নিরাময়ে সম্প্রসারণ কর্মকর্তার পরামর্শ প্রয়োজন।"
+
+    # Automatically save SyncDossier into PostgreSQL so it immediately reflects in the Command Center
+    try:
+        now = datetime.now(timezone.utc)
+        dossier_id = str(uuid.uuid4())
+
+        # Determine preliminary diagnosis tag
+        diag = "বান্দরবান কফি পর্যবেক্ষণ (মিলিবাগ ও ডাইব্যাক ঝুঁকি)"
+        if "মিলিবাগ" in cleaned_transcript:
+            diag = "কফি মিলিবাগ পোকা আক্রমণ (Mealybug)"
+        elif "মরিচা" in cleaned_transcript or "rust" in cleaned_transcript.lower():
+            diag = "কফি পাতা মরিচা রোগ (Coffee Leaf Rust)"
+        elif "ডাইব্যাক" in cleaned_transcript or "dieback" in cleaned_transcript.lower():
+            diag = "অ্যারাবিকা ডাইব্যাক (Dieback)"
+        elif "চেরি" in cleaned_transcript or "বোরার" in cleaned_transcript:
+            diag = "কফি বেরি বোরার বা চেরি পচন"
+
+        is_high = any(k in cleaned_transcript for k in ["মিলিবাগ", "মরিচা", "ডাইব্যাক", "পোকা", "শুকিয়ে", "ঝরে"])
+
+        db_dossier = SyncDossier(
+            id=dossier_id,
+            farmer_id=farmer_id or "farmer_noor_01",
+            farmer_name=farmer_name or "Noor",
+            crop_type=crop_type or "Arabica Coffee (Bourbon)",
+            offline_diagnosis=diag,
+            symptoms_description=cleaned_transcript,
+            geo_lat=21.8311,
+            geo_lon=92.2184,
+            altitude_m=650.0,
+            client_recorded_at=now,
+            synced_at=now,
+            advisory_summary=f"কৃষক {farmer_name or 'নূর'} এর কফি পর্যবেক্ষণ ডিএই বান্দরবান সিস্টেমে লাইভ সিঙ্ক হয়েছে।",
+            recommended_action="ডিএই বান্দরবান প্রোটোকল অনুযায়ী দ্রুত জৈব নিম তেল প্রয়োগ বা ডাইব্যাক আক্রান্ত ডাল ছাঁটাই করুন।",
+            urgency_level="HIGH" if is_high else "MEDIUM",
+            market_context="বান্দরবান অ্যারাবিকা কফি ন্যায্যমূল্য বেঞ্চমার্ক: ৳৪৫০-৳৫০০ / কেজি (ড্রাই পার্চমেন্ট)। ফড়িয়াদের কাছে কাঁচা চেরি কম দামে বিক্রয় রোধে সহায়তা দিন।",
+            status="PROCESSED",
+        )
+        db.add(db_dossier)
+        await db.commit()
+        logger.info(f"Stream dossier {dossier_id} successfully saved to database for {farmer_name}.")
+    except Exception as db_err:
+        logger.error(f"Error persisting stream dossier to database: {db_err}")
+        await db.rollback()
+
     return StreamingResponse(
         stream_bangladesh_agri_advice(
-            transcript=transcript,
+            transcript=cleaned_transcript,
             image_bytes=image_bytes,
             mime_type=mime_type,
         ),

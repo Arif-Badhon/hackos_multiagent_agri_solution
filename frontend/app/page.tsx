@@ -19,6 +19,8 @@ import {
   Layers,
 } from "lucide-react";
 
+import { getApiUrl } from "@/utils/api";
+
 interface SyncDossier {
   id: string;
   farmer_id: string;
@@ -58,15 +60,14 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedDossier, setSelectedDossier] = useState<SyncDossier | null>(null);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
   // Fetch dossiers and stats from backend
   const fetchData = useCallback(async () => {
     setLoading(true);
+    const resolvedApiUrl = getApiUrl();
     try {
       const [dossiersRes, statsRes] = await Promise.all([
-        fetch(`${apiUrl}/api/sync/dossiers?limit=50`),
-        fetch(`${apiUrl}/api/sync/stats`),
+        fetch(`${resolvedApiUrl}/api/sync/dossiers?limit=50`),
+        fetch(`${resolvedApiUrl}/api/sync/stats`),
       ]);
 
       if (dossiersRes.ok) {
@@ -82,11 +83,11 @@ export default function Home() {
         setStats(sData);
       }
     } catch (err) {
-      console.warn("Could not reach backend API at", apiUrl, err);
+      console.warn("Could not reach backend API at", resolvedApiUrl, err);
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, selectedDossier]);
+  }, [selectedDossier]);
 
   useEffect(() => {
     fetchData();
@@ -518,6 +519,9 @@ export default function Home() {
 
             <DossierSync
               onSyncComplete={() => {
+                fetchData();
+              }}
+              onNavigateToOfficer={() => {
                 fetchData();
                 setActiveTab("officer");
               }}

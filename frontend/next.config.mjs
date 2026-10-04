@@ -18,7 +18,9 @@ const nextConfig = {
   reactStrictMode: true,
   // Support cloud deployments and Vercel edge routes
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const backendUrl =
+      process.env.NEXT_PUBLIC_API_URL ||
+      "https://hackos-multiagent-agri-solution.onrender.com";
     return [
       {
         source: "/api/backend/:path*",

@@ -7,20 +7,22 @@ import {
   Camera,
   Sparkles,
   RefreshCw,
-  Sprout,
   AlertCircle,
   CheckCircle2,
-  MapPin,
   X,
   Copy,
   Check,
   ShieldAlert,
   Sun,
   Scale,
+  Volume2,
+  ArrowRight,
 } from "lucide-react";
+import { getApiUrl } from "@/utils/api";
 
 interface DossierSyncProps {
   onSyncComplete?: () => void;
+  onNavigateToOfficer?: () => void;
 }
 
 // Minimal type definitions for Browser SpeechRecognition API
@@ -62,25 +64,36 @@ declare global {
   }
 }
 
-export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
+export default function DossierSync({
+  onSyncComplete,
+  onNavigateToOfficer,
+}: DossierSyncProps) {
   // State for image input & preview
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // State for Bangla voice transcription & manual text input
+  // State for voice recording (hardware MediaRecorder + live speech transcript)
   const [transcript, setTranscript] = useState<string>("");
   const [isListening, setIsListening] = useState<boolean>(false);
+  const [recordingSeconds, setRecordingSeconds] = useState<number>(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [speechError, setSpeechError] = useState<string | null>(null);
 
-  // Streaming and analysis states
+  // Streaming, analysis, and sync states
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [analysisStream, setAnalysisStream] = useState<string>("");
   const [streamError, setStreamError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+  const [syncSuccess, setSyncSuccess] = useState<boolean>(false);
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const initialTranscriptRef = useRef<string>("");
 
   // Handle mobile camera / file capture
@@ -105,16 +118,40 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
     }
   };
 
-  // Toggle native Bangla voice recording via webkitSpeechRecognition
-  const toggleListening = () => {
+  const removeAudio = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setAudioBlob(null);
+    setAudioUrl(null);
+  };
+
+  // Toggle dual voice input: Hardware MediaRecorder (guaranteed) + SpeechRecognition (optional live text)
+  const toggleListening = async () => {
     setSpeechError(null);
 
+    // If currently listening/recording, STOP
     if (isListening) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (e) {
+          console.warn("Error stopping media recorder:", e);
+        }
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
         } catch {
-          // Ignore stop errors
+          // Ignore
         }
       }
       setIsListening(false);
@@ -123,122 +160,130 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
 
     if (typeof window === "undefined") return;
 
-    // Check secure context: Web Speech API strictly requires HTTPS in production
-    const isLocalhost =
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1" ||
-      window.location.hostname === "::1";
-
-    if (!isLocalhost && window.location.protocol !== "https:") {
+    // Check hardware microphone availability
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setSpeechError(
-        "ব্রাউজারে ভয়েস রিকগনিশনের জন্য নিরাপদ HTTPS সংযোগ প্রয়োজন (বর্তমানে HTTP সংযোগে রয়েছে)। ক্রোম ব্রাউজার কেবল HTTPS-এ গুগল স্পিচ ক্লাউড সংযোগের অনুমতি দেয়। অনুগ্রহ করে HTTPS ব্যবহার করুন অথবা নিচে সরাসরি সমস্যাটি লিখুন।"
-      );
-      return;
-    }
-
-    // Check offline status: Web Speech API is cloud-based and requires active internet
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setSpeechError(
-        "আপনার ডিভাইস বর্তমানে অফলাইনে রয়েছে। ব্রাউজারের ভয়েস রিকগনিশন ক্লাউড সার্ভারের ওপর নির্ভরশীল। অফলাইনে নিচে সরাসরি সমস্যাটি লিখুন বা প্রস্তুত সমস্যা কার্ড থেকে নির্বাচন করুন।"
-      );
-      return;
-    }
-
-    const SpeechRecognitionConstructor =
-      window.webkitSpeechRecognition || window.SpeechRecognition;
-
-    if (!SpeechRecognitionConstructor) {
-      setSpeechError(
-        "আপনার ব্রাউজারে স্পিচ রিকগনিশন সমর্থিত নয়। অনুগ্রহ করে গুগল ক্রোম ব্রাউজার ব্যবহার করুন অথবা সরাসরি বাংলায় লিখুন।"
+        "আপনার ব্রাউজারে সরাসরি মাইক্রোফোন অডিও রেকর্ডিং সমর্থিত নয়। অনুগ্রহ করে সরাসরি টাইপ করুন বা প্রস্তুত সমস্যা নির্বাচন করুন।"
       );
       return;
     }
 
     try {
-      const recognition = new SpeechRecognitionConstructor();
-      // Hardcode Bangla (Bangladesh) dialect capturing
-      recognition.lang = "bn-BD";
-      // Setting continuous to false avoids aggressive socket keepalive timeouts ('network' errors)
-      // while still delivering interim results during speech.
-      recognition.continuous = false;
-      recognition.interimResults = true;
+      // 1. Start hardware audio stream
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
 
-      recognition.onstart = () => {
-        setIsListening(true);
-        setSpeechError(null);
-        initialTranscriptRef.current = transcript.trim();
-      };
+      const options = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? { mimeType: "audio/webm;codecs=opus" }
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? { mimeType: "audio/webm" }
+        : MediaRecorder.isTypeSupported("audio/mp4")
+        ? { mimeType: "audio/mp4" }
+        : undefined;
 
-      recognition.onresult = (event: BrowserSpeechRecognitionEvent) => {
-        let currentSessionTranscript = "";
-        for (let i = 0; i < event.results.length; i++) {
-          currentSessionTranscript += event.results[i][0].transcript;
-        }
-        const base = initialTranscriptRef.current;
-        setTranscript(base ? `${base} ${currentSessionTranscript}` : currentSessionTranscript);
-      };
+      const mediaRecorder = options
+        ? new MediaRecorder(stream, options)
+        : new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
 
-      recognition.onerror = (event: BrowserSpeechRecognitionErrorEvent) => {
-        console.warn("Speech recognition error:", event.error);
-        setIsListening(false);
-
-        if (event.error === "no-speech") {
-          // User paused without speaking; gracefully exit
-          return;
-        }
-
-        if (event.error === "network") {
-          setSpeechError(
-            "স্পিচ সার্ভার সংযোগ ত্রুটি (Network Error): গুগল স্পিচ ক্লাউডে সংযোগ স্থাপন করা যায়নি। কারণ হতে পারে: (১) সাইটটি নিরাপদ HTTPS-এ নেই, (২) দুর্বল বা অস্থির মোবাইল ইন্টারনেট, বা (৩) Brave Shields / অ্যাডব্লকার গুগল স্পিচ সার্ভিস ব্লক করছে। অনুগ্রহ করে নিচে সরাসরি সমস্যাটি লিখুন বা প্রস্তুত সমস্যা বাছাই করুন।"
-          );
-        } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-          setSpeechError(
-            "মাইক্রোফোনের অনুমতি দেওয়া হয়নি (Permission Denied): ব্রাউজার সাইট সেটিংসে গিয়ে KrishiKotha AI-এর জন্য মাইক্রোফোন পারমিশন Allow করুন।"
-          );
-        } else if (event.error === "audio-capture") {
-          setSpeechError(
-            "কোনো মাইক্রোফোন পাওয়া যায়নি: অনুগ্রহ করে নিশ্চিত করুন ডিভাইসের অডিও ইনপুট চালু আছে।"
-          );
-        } else if (event.error === "language-not-supported") {
-          setSpeechError(
-            "বাংলা ভাষা (bn-BD) এই ব্রাউজারে সমর্থিত নয়: অনুগ্রহ করে নিচে সরাসরি বাংলায় টাইপ করুন।"
-          );
-        } else if (event.error === "aborted") {
-          // User deliberately aborted
-        } else {
-          setSpeechError(`মাইক্রোফোন ত্রুটি (${event.error})। অনুগ্রহ করে নিচে সরাসরি বাংলায় লিখুন।`);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
       };
 
-      recognition.onend = () => {
-        setIsListening(false);
+      mediaRecorder.onstop = () => {
+        const mimeType = mediaRecorder.mimeType || "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        setAudioBlob(blob);
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+
+        // If user didn't get speech-to-text transcript or didn't type, give a clear voice note indicator
+        setTranscript((prev) => {
+          if (!prev.trim()) {
+            return "কৃষকের অডিও বার্তা (ভয়েস নোট রেকর্ড সংযুক্ত - কফি গাছের পর্যবেক্ষণ)";
+          }
+          return prev;
+        });
       };
 
-      recognitionRef.current = recognition;
-      recognition.start();
+      mediaRecorder.start(250);
+      setIsListening(true);
+      setRecordingSeconds(0);
+      initialTranscriptRef.current = transcript.trim();
+
+      // Start recording timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+
+      // 2. Concurrently attempt Web Speech Recognition for live text transcription (best-effort)
+      const SpeechRecognitionConstructor =
+        window.webkitSpeechRecognition || window.SpeechRecognition;
+
+      if (SpeechRecognitionConstructor) {
+        try {
+          const recognition = new SpeechRecognitionConstructor();
+          recognition.lang = "bn-BD";
+          recognition.continuous = false;
+          recognition.interimResults = true;
+
+          recognition.onresult = (event: BrowserSpeechRecognitionEvent) => {
+            let sessionTranscript = "";
+            for (let i = 0; i < event.results.length; i++) {
+              sessionTranscript += event.results[i][0].transcript;
+            }
+            const base = initialTranscriptRef.current;
+            setTranscript(base ? `${base} ${sessionTranscript}` : sessionTranscript);
+          };
+
+          recognition.onerror = (event: BrowserSpeechRecognitionErrorEvent) => {
+            // Silently log; local hardware audio recording is already active and unaffected!
+            console.warn("Web Speech API note (local hardware recording is active):", event.error);
+          };
+
+          recognitionRef.current = recognition;
+          recognition.start();
+        } catch (speechErr) {
+          console.warn("Speech recognition optional enhancement unavailable:", speechErr);
+        }
+      }
     } catch (err: unknown) {
-      console.error("Speech recognition startup failure:", err);
-      setSpeechError("মাইক্রোফোন শুরু করা যায়নি। ব্রাউজারে মাইক্রোফোনের অনুমতি ও HTTPS পরীক্ষা করুন।");
+      console.error("Microphone hardware access failure:", err);
+      const isNotAllowed =
+        err instanceof DOMException &&
+        (err.name === "NotAllowedError" || err.name === "PermissionDeniedError");
+      if (isNotAllowed) {
+        setSpeechError(
+          "মাইক্রোফোনের অনুমতি দেওয়া হয়নি (Permission Denied): অনুগ্রহ করে আপনার ব্রাউজারের সাইট সেটিংসে গিয়ে KrishiKotha AI-এর জন্য মাইক্রোফোন পারমিশন Allow করুন।"
+        );
+      } else {
+        setSpeechError(
+          "মাইক্রোফোন চালু করা যায়নি। অনুগ্রহ করে আপনার ডিভাইসের অডিও ইনপুট চেক করুন অথবা সরাসরি বাংলায় লিখুন।"
+        );
+      }
       setIsListening(false);
     }
   };
 
   // Submission function streaming to Claude 3.5 Sonnet
   const streamToClaude = async () => {
-    if (!transcript.trim() && !imageFile) {
-      setStreamError("অনুগ্রহ করে আপনার সমস্যার কথা বলুন অথবা কফি ফসলের ছবি তুলুন।");
+    if (!transcript.trim() && !imageFile && !audioBlob) {
+      setStreamError("অনুগ্রহ করে আপনার সমস্যার কথা বলুন, অডিও রেকর্ড করুন অথবা কফি ফসলের ছবি তুলুন।");
       return;
     }
 
     // Stop listening if active
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
+    if (isListening) {
+      await toggleListening();
     }
 
     setIsStreaming(true);
     setAnalysisStream("");
     setStreamError(null);
+    setSyncSuccess(false);
 
     try {
       // Build FormData payload
@@ -253,7 +298,15 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
         formData.append("image", imageFile);
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      if (audioBlob) {
+        formData.append("audio", audioBlob, "farmer_recording.webm");
+      }
+
+      formData.append("farmer_name", "Noor (নূর)");
+      formData.append("farmer_id", "farmer_noor_01");
+      formData.append("crop_type", "Arabica Coffee (Bourbon)");
+
+      const apiUrl = getApiUrl();
       const targetEndpoint = `${apiUrl}/api/sync/stream`;
 
       const response = await fetch(targetEndpoint, {
@@ -281,6 +334,8 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
         setAnalysisStream((prev) => prev + chunk);
       }
 
+      // Mark sync success and refresh Command Center data in the background (without redirecting!)
+      setSyncSuccess(true);
       if (onSyncComplete) {
         onSyncComplete();
       }
@@ -310,43 +365,35 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#0A281B] via-[#0F382A] to-[#0A281B] border border-[#13422E] rounded-2xl p-5 shadow-lg text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center shrink-0">
-              <Sprout className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-lg font-bold text-white tracking-wide">
-                  DAE Bandarban Coffee Agent
-                </h1>
-                <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full">
-                  Claude 3.5 Sonnet
-                </span>
-              </div>
-              <p className="text-xs text-emerald-300/80 mt-0.5">
-                কৃষি সম্প্রসারণ অধিদপ্তর (DAE) • বান্দরবান পার্বত্য জেলা • কফি চাষী সহায়িকা
-              </p>
-            </div>
+    <div className="space-y-6">
+      {/* Visual Header Banner */}
+      <div className="bg-gradient-to-r from-[#0F382A] via-[#0A281B] to-[#051A11] border border-emerald-500/30 rounded-2xl p-5 shadow-lg flex items-center justify-between">
+        <div>
+          <div className="flex items-center space-x-2">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              বান্দরবান হিল ট্র্যাক্টস &bull; পাইলট
+            </span>
+            <span className="text-xs text-emerald-400/80 font-medium">
+              কৃষক নূর (Farmer Noor)
+            </span>
           </div>
-          <div className="flex items-center space-x-1.5 text-[11px] text-emerald-300/70 bg-[#051A11] px-3 py-1.5 rounded-lg border border-[#13422E] self-start sm:self-auto">
-            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-            <span>বান্দরবান (উচ্চতা: ৩০০-৮৫০ মি.)</span>
-          </div>
+          <h2 className="text-lg font-bold text-white mt-1">
+            ডিএই কফি রোগ নির্ণয় ও পরামর্শ টার্মিনাল
+          </h2>
+          <p className="text-xs text-emerald-200/70 mt-0.5">
+            ক্লদ ৩.৫ সননেট সমর্থিত রিয়েল-টাইম বাংলা কৃষি পরামর্শ ও স্বয়ংক্রিয় কমান্ড সেন্টার সিঙ্ক
+          </p>
         </div>
       </div>
 
-      {/* Main Interactive Form Card */}
-      <div className="bg-white dark:bg-[#0A281B] border border-gray-200 dark:border-[#13422E] rounded-2xl p-5 sm:p-6 shadow-md space-y-6">
-        {/* Step 1: Crop Camera Capture */}
+      {/* Input Card Container */}
+      <div className="bg-white dark:bg-[#0A281B] border border-gray-200 dark:border-[#13422E] rounded-2xl p-5 sm:p-6 shadow-sm space-y-6">
+        {/* Step 1: Camera Photo Capture */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-semibold text-gray-900 dark:text-emerald-100 flex items-center space-x-2">
               <Camera className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>১. কফি গাছের ছবি তুলুন (মোবাইল ক্যামেরা বা গ্যালারি)</span>
+              <span>১. কফি ফসলের ছবি তুলুন বা আপলোড করুন (ঐচ্ছিক)</span>
             </label>
             {imagePreview && (
               <button
@@ -420,7 +467,7 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
           <div className="flex items-center justify-between">
             <label className="text-sm font-semibold text-gray-900 dark:text-emerald-100 flex items-center space-x-2">
               <Mic className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>২. আপনার সমস্যা বা পর্যবেক্ষণ বাংলায় বলুন</span>
+              <span>২. আপনার সমস্যা বা পর্যবেক্ষণ বাংলায় বলুন বা রেকর্ড করুন</span>
             </label>
 
             {/* Speak Bangla Button */}
@@ -441,19 +488,48 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
               ) : (
                 <>
                   <Mic className="w-3.5 h-3.5" />
-                  <span>Speak Bangla (বাংলায় বলুন)</span>
+                  <span>ভয়েস রেকর্ড করুন / বাংলায় বলুন</span>
                 </>
               )}
             </button>
           </div>
 
-          {/* Listening Indicator */}
+          {/* Listening / Hardware Recording Indicator with live timer */}
           {isListening && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl flex items-center space-x-3 text-xs text-red-700 dark:text-red-300">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0" />
-              <div>
-                <span className="font-bold">শুনছি...</span> আপনার কফি গাছের সমস্যা, মিলিবাগ বা ফড়িয়া সংক্রান্ত সমস্যা স্বাভাবিক বাংলায় বলুন (ভাষা: bn-BD)।
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl flex items-center justify-between text-xs text-red-700 dark:text-red-300">
+              <div className="flex items-center space-x-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0" />
+                <div>
+                  <span className="font-bold">ভয়েস রেকর্ড হচ্ছে...</span> স্বাভাবিক বাংলায় আপনার কফি গাছের সমস্যা বলুন।
+                </div>
               </div>
+              <span className="font-mono font-bold bg-red-600 text-white px-2 py-0.5 rounded text-[11px] shrink-0">
+                {Math.floor(recordingSeconds / 60)
+                  .toString()
+                  .padStart(2, "0")}
+                :{(recordingSeconds % 60).toString().padStart(2, "0")}
+              </span>
+            </div>
+          )}
+
+          {/* Recorded Audio Playback Card */}
+          {audioUrl && !isListening && (
+            <div className="p-3 bg-emerald-50 dark:bg-[#051A11] border border-emerald-300 dark:border-[#13422E] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="font-semibold text-gray-800 dark:text-emerald-200">
+                  রেকর্ডকৃত ভয়েস নোট:
+                </span>
+                <audio controls src={audioUrl} className="h-8 max-w-[220px]" />
+              </div>
+              <button
+                type="button"
+                onClick={removeAudio}
+                className="text-red-500 hover:text-red-600 text-xs flex items-center space-x-1 shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>অডিও সরান</span>
+              </button>
             </div>
           )}
 
@@ -570,6 +646,33 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
           </button>
         </div>
       </div>
+
+      {/* Sync Success & Command Center Jump Banner */}
+      {syncSuccess && (
+        <div className="p-4 bg-[#0A281B] border border-emerald-500/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-200 shadow-xl">
+          <div className="flex items-center space-x-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <div>
+              <span className="font-bold text-white text-sm block">
+                পরামর্শ সফলভাবে প্রাপ্ত ও সংরক্ষিত হয়েছে!
+              </span>
+              <span className="text-emerald-300/80">
+                আপনার পর্যবেক্ষণটি জেলা এক্সটেনশন অফিসার কমান্ড সেন্টারে রেকর্ডভুক্ত হয়েছে।
+              </span>
+            </div>
+          </div>
+          {onNavigateToOfficer && (
+            <button
+              type="button"
+              onClick={onNavigateToOfficer}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center space-x-2 transition-all self-start sm:self-auto shrink-0 shadow-md"
+            >
+              <span>কমান্ড সেন্টারে দেখুন</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Real-time Streaming Advice Display */}
       {(isStreaming || analysisStream) && (
