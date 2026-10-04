@@ -1,5 +1,7 @@
-# ☕ Ondera Agro-Mesh (DAE Bandarban Edition)
+# ☕ Krishikotha AI
+
 ### Offline-First Edge Multi-Agent Mesh & Multimodal Streaming for Smallholder Coffee Cultivation in Bandarban, Bangladesh
+
 **World Bank Small AI for Development Hackathon**
 
 [![Frontend: Next.js 14](https://img.shields.io/badge/Frontend-Next.js%2014%20(App%20Router)-black?style=flat&logo=next.js)](https://nextjs.org)
@@ -14,6 +16,7 @@
 ---
 
 > 🚀 **Live Production Demo**:
+>
 > - **Frontend Web App (Vercel)**: [https://hackoshackhathon.vercel.app](https://hackoshackhathon.vercel.app/)
 > - **FastAPI Backend (Render)**: [https://hackos-multiagent-agri-solution.onrender.com](https://hackos-multiagent-agri-solution.onrender.com)
 > - **Interactive Swagger Docs**: [https://hackos-multiagent-agri-solution.onrender.com/docs](https://hackos-multiagent-agri-solution.onrender.com/docs)
@@ -22,6 +25,7 @@
 ---
 
 ## 📖 Table of Contents
+
 1. [Executive Summary & Bangladesh Coffee Context](#-executive-summary--bangladesh-coffee-context)
 2. [Local Constraints & The DAE Bandarban Challenge](#-local-constraints--the-dae-bandarban-challenge)
 3. [High-Level System Architecture](#-high-level-system-architecture)
@@ -43,13 +47,16 @@
 In Bangladesh, the hilly terrains of **Bandarban (Chittagong Hill Tracts)** are emerging as a high-potential frontier for commercial coffee cultivation. Under initiatives from the **Department of Agricultural Extension (DAE)**, thousands of indigenous and smallholder farmers are cultivating Arabica and Robusta varieties on mountain slopes (elevation 300m – 850m+ ASL).
 
 However, smallholder coffee growers in Bandarban face severe operational bottlenecks:
+
 1. **Zero / Weak Connectivity in Remote Hill Tracts**: Steep valleys and remote mountain communities have no cellular data or unreliable 2G coverage.
 2. **Pathology & Climate Stress**: High summer heat (>36°C) and micro-climate humidity induce severe **Mealybug** infestations and **Dieback on Arabica**, causing leaf drop and premature cherry drying.
 3. **Pulping & Drying Machine Deficit**: Smallholders lack mechanical pulpers and solar drying houses. Unable to process fresh cherries on-site, they are forced to sell raw cherries at rock-bottom prices to predatory local middlemen (*farias*).
 4. **Language & Literacy Barriers**: Smallholder farmers require intuitive, zero-typing interactions in standard Bengali (**Bangla**) with visual evidence.
 
 ### The Solution: Ondera Agro-Mesh (DAE Bandarban Edition)
+
 Ondera Agro-Mesh addresses these acute bottlenecks through a unified edge multi-agent system:
+
 - **Mobile Camera Capture (`capture="environment"`)**: Mobile-first photo capture of foliar symptoms, mealybug clusters, and cherry dieback.
 - **Native Bangla Speech Recognition (`bn-BD`)**: High-accuracy spoken Bengali transcription directly in the mobile browser using the native Web Speech API.
 - **Anthropic Claude 3.5 Sonnet Multimodal Streaming**: Real-time server-sent events (`text/event-stream`) streaming actionable agronomic guidance in standard Bengali directly to the farmer.
@@ -161,6 +168,7 @@ The mobile interface is crafted with agricultural emerald/white thematic styles 
 ## 🔄 Offline-First Store-and-Forward Topology
 
 When scouting deep in mountain plots with zero connectivity:
+
 1. Observations and photos are secured in the **Local Store-and-Forward Vault** (`localStorage` / IndexedDB).
 2. The UI operates in **Offline Mode**; dossiers are tagged with client timestamps and geo-coordinates.
 3. Upon returning to community centers or mobile network coverage, the **Burst Sync Transmission** fires automatically or via one-click synchronization to `POST /api/sync`.
@@ -215,6 +223,7 @@ CREATE INDEX idx_dossier_synced_urgency ON sync_dossiers (synced_at, urgency_lev
 ## 📡 API Specification
 
 ### 1. Multimodal Streaming Advisory (DAE Bandarban)
+
 - **Endpoint**: `POST /api/sync/stream`
 - **Content-Type**: `multipart/form-data`
 - **Response**: `text/event-stream`
@@ -222,6 +231,7 @@ CREATE INDEX idx_dossier_synced_urgency ON sync_dossiers (synced_at, urgency_lev
   - `transcript` (*string*, required): Spoken Bangla transcript or farmer's observation.
   - `image` (*UploadFile*, optional): Camera photo of infected coffee foliage or cherries.
 - **Example cURL**:
+
 ```bash
 curl -X POST http://localhost:8000/api/sync/stream \
   -F "transcript=বান্দরবানে আমার কফি গাছে মিলিবাগ আক্রমণ করেছে এবং ডাল শুকিয়ে কালো হচ্ছে।" \
@@ -229,23 +239,28 @@ curl -X POST http://localhost:8000/api/sync/stream \
 ```
 
 ### 2. Synchronize Store-and-Forward Dossier
+
 - **Endpoint**: `POST /api/sync`
 - **Content-Type**: `application/json`
 - **Response**: `201 Created` with full structured Claude advisory.
 
 ### 3. Batch Synchronization
+
 - **Endpoint**: `POST /api/sync/batch`
 - **Description**: Synchronizes multiple queued field dossiers collected over multi-day mountain excursions.
 
 ### 4. Extension Officer Dossier Feed
+
 - **Endpoint**: `GET /api/sync/dossiers?urgency=HIGH&limit=50`
 - **Description**: Query synchronized dossiers filtered by urgency level and farmer ID.
 
 ### 5. Aggregated Regional Statistics
+
 - **Endpoint**: `GET /api/sync/stats`
 - **Description**: Summary metrics: total alerts, active farmers, and fair market benchmark.
 
 ### 6. Service Health Check
+
 - **Endpoint**: `GET /api/health`
 - **Response**: `{"status": "healthy", "database": "connected", "version": "1.0.0"}`
 
@@ -254,11 +269,13 @@ curl -X POST http://localhost:8000/api/sync/stream \
 ## 🚀 Quick Start & Local Setup
 
 ### Prerequisites
+
 - [Docker](https://www.docker.com/) & Docker Compose
 - [Node.js](https://nodejs.org/) v18+ (Node 20+ recommended)
 - [Python](https://www.python.org/) 3.11+ (or `uv`)
 
 ### 1. Clone & Configure Environment
+
 ```bash
 git clone https://github.com/Arif-Badhon/hackos_multiagent_agri_solution.git ondera-agro-mesh
 cd ondera-agro-mesh
@@ -270,29 +287,35 @@ cp frontend/.env.example frontend/.env.local
 ```
 
 Ensure your Anthropic API Key is set in `backend/.env`:
+
 ```env
 ANTHROPIC_API_KEY=sk-ant-api03-...
 CLAUDE_MODEL=claude-3-5-sonnet-20241022
 ```
+
 *(If no API key is provided, the system seamlessly activates the built-in domain fallback streaming engine in Bengali).*
 
 ### 2. Start PostgreSQL Container
+
 ```bash
 docker compose up postgres -d
 # Or: make db-up
 ```
 
 ### 3. Seed Sample Database Records
+
 ```bash
 make seed
 # Or: cd backend && python seed.py
 ```
 
 ### 4. Run Both Frontend and Backend Concurrently
+
 ```bash
 npm run dev
 # Or: make dev
 ```
+
 - **Frontend App**: [http://localhost:3000](http://localhost:3000)
 - **FastAPI Interactive Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **API Health**: [http://localhost:8000/api/health](http://localhost:8000/api/health)
@@ -339,15 +362,19 @@ Follow these steps to evaluate the multimodal streaming and offline mesh capabil
 ## ☁️ Cloud Deployment Guide
 
 ### Deploying Frontend to Vercel
+
 1. Import repository on [Vercel](https://vercel.com/new).
 2. Set **Root Directory** to `frontend`.
 3. Add environment variable:
+
    ```env
    NEXT_PUBLIC_API_URL=https://your-backend-api.onrender.com
    ```
+
 4. Deploy! Next.js compiles PWA service workers and serves via global edge CDN.
 
 ### Deploying Backend to Cloud Containers (Render / Cloud Run)
+
 ```bash
 docker build -t ondera-backend ./backend
 docker run -p 8000:8000 \
@@ -402,4 +429,5 @@ ondera-agro-mesh/
 ---
 
 ## 📜 License & Acknowledgments
+
 Developed for the **World Bank Small AI for Development Hackathon**. Dedicated to empowering smallholder coffee farming communities in Bandarban, Bangladesh with resilient, offline-first artificial intelligence and equitable market access.
