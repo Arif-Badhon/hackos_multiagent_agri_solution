@@ -81,6 +81,7 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
   // Refs
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const initialTranscriptRef = useRef<string>("");
 
   // Handle mobile camera / file capture
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,7 +111,11 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
 
     if (isListening) {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // Ignore stop errors
+        }
       }
       setIsListening(false);
       return;
@@ -118,12 +123,33 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
 
     if (typeof window === "undefined") return;
 
+    // Check secure context: Web Speech API strictly requires HTTPS in production
+    const isLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "::1";
+
+    if (!isLocalhost && window.location.protocol !== "https:") {
+      setSpeechError(
+        "ব্রাউজারে ভয়েস রিকগনিশনের জন্য নিরাপদ HTTPS সংযোগ প্রয়োজন (বর্তমানে HTTP সংযোগে রয়েছে)। ক্রোম ব্রাউজার কেবল HTTPS-এ গুগল স্পিচ ক্লাউড সংযোগের অনুমতি দেয়। অনুগ্রহ করে HTTPS ব্যবহার করুন অথবা নিচে সরাসরি সমস্যাটি লিখুন।"
+      );
+      return;
+    }
+
+    // Check offline status: Web Speech API is cloud-based and requires active internet
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSpeechError(
+        "আপনার ডিভাইস বর্তমানে অফলাইনে রয়েছে। ব্রাউজারের ভয়েস রিকগনিশন ক্লাউড সার্ভারের ওপর নির্ভরশীল। অফলাইনে নিচে সরাসরি সমস্যাটি লিখুন বা প্রস্তুত সমস্যা কার্ড থেকে নির্বাচন করুন।"
+      );
+      return;
+    }
+
     const SpeechRecognitionConstructor =
       window.webkitSpeechRecognition || window.SpeechRecognition;
 
     if (!SpeechRecognitionConstructor) {
       setSpeechError(
-        "আপনার ব্রাউজারে স্পিচ রিকগনিশন সমর্থিত নয়। অনুগ্রহ করে গুগল ক্রোম ব্রাউজার ব্যবহার করুন অথবা লিখে জানান।"
+        "আপনার ব্রাউজারে স্পিচ রিকগনিশন সমর্থিত নয়। অনুগ্রহ করে গুগল ক্রোম ব্রাউজার ব্যবহার করুন অথবা সরাসরি বাংলায় লিখুন।"
       );
       return;
     }
@@ -132,27 +158,56 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
       const recognition = new SpeechRecognitionConstructor();
       // Hardcode Bangla (Bangladesh) dialect capturing
       recognition.lang = "bn-BD";
-      recognition.continuous = true;
+      // Setting continuous to false avoids aggressive socket keepalive timeouts ('network' errors)
+      // while still delivering interim results during speech.
+      recognition.continuous = false;
       recognition.interimResults = true;
 
       recognition.onstart = () => {
         setIsListening(true);
+        setSpeechError(null);
+        initialTranscriptRef.current = transcript.trim();
       };
 
       recognition.onresult = (event: BrowserSpeechRecognitionEvent) => {
-        let currentTranscript = "";
+        let currentSessionTranscript = "";
         for (let i = 0; i < event.results.length; i++) {
-          currentTranscript += event.results[i][0].transcript;
+          currentSessionTranscript += event.results[i][0].transcript;
         }
-        setTranscript(currentTranscript);
+        const base = initialTranscriptRef.current;
+        setTranscript(base ? `${base} ${currentSessionTranscript}` : currentSessionTranscript);
       };
 
       recognition.onerror = (event: BrowserSpeechRecognitionErrorEvent) => {
         console.warn("Speech recognition error:", event.error);
-        if (event.error !== "no-speech") {
-          setSpeechError(`মাইক্রোফোন ত্রুটি: ${event.error}`);
-        }
         setIsListening(false);
+
+        if (event.error === "no-speech") {
+          // User paused without speaking; gracefully exit
+          return;
+        }
+
+        if (event.error === "network") {
+          setSpeechError(
+            "স্পিচ সার্ভার সংযোগ ত্রুটি (Network Error): গুগল স্পিচ ক্লাউডে সংযোগ স্থাপন করা যায়নি। কারণ হতে পারে: (১) সাইটটি নিরাপদ HTTPS-এ নেই, (২) দুর্বল বা অস্থির মোবাইল ইন্টারনেট, বা (৩) Brave Shields / অ্যাডব্লকার গুগল স্পিচ সার্ভিস ব্লক করছে। অনুগ্রহ করে নিচে সরাসরি সমস্যাটি লিখুন বা প্রস্তুত সমস্যা বাছাই করুন।"
+          );
+        } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          setSpeechError(
+            "মাইক্রোফোনের অনুমতি দেওয়া হয়নি (Permission Denied): ব্রাউজার সাইট সেটিংসে গিয়ে KrishiKotha AI-এর জন্য মাইক্রোফোন পারমিশন Allow করুন।"
+          );
+        } else if (event.error === "audio-capture") {
+          setSpeechError(
+            "কোনো মাইক্রোফোন পাওয়া যায়নি: অনুগ্রহ করে নিশ্চিত করুন ডিভাইসের অডিও ইনপুট চালু আছে।"
+          );
+        } else if (event.error === "language-not-supported") {
+          setSpeechError(
+            "বাংলা ভাষা (bn-BD) এই ব্রাউজারে সমর্থিত নয়: অনুগ্রহ করে নিচে সরাসরি বাংলায় টাইপ করুন।"
+          );
+        } else if (event.error === "aborted") {
+          // User deliberately aborted
+        } else {
+          setSpeechError(`মাইক্রোফোন ত্রুটি (${event.error})। অনুগ্রহ করে নিচে সরাসরি বাংলায় লিখুন।`);
+        }
       };
 
       recognition.onend = () => {
@@ -163,7 +218,7 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
       recognition.start();
     } catch (err: unknown) {
       console.error("Speech recognition startup failure:", err);
-      setSpeechError("মাইক্রোফোন শুরু করা যায়নি। ব্রাউজারে মাইক্রোফোনের অনুমতি পরীক্ষা করুন।");
+      setSpeechError("মাইক্রোফোন শুরু করা যায়নি। ব্রাউজারে মাইক্রোফোনের অনুমতি ও HTTPS পরীক্ষা করুন।");
       setIsListening(false);
     }
   };
@@ -403,9 +458,24 @@ export default function DossierSync({ onSyncComplete }: DossierSyncProps) {
           )}
 
           {speechError && (
-            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-lg text-xs text-amber-700 dark:text-amber-300 flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{speechError}</span>
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-800 dark:text-amber-200 flex items-start justify-between space-x-2">
+              <div className="flex items-start space-x-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-semibold block text-amber-900 dark:text-amber-100">
+                    ভয়েস ইনপুট পরামর্শ:
+                  </span>
+                  <p className="leading-relaxed">{speechError}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSpeechError(null)}
+                className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 shrink-0 p-0.5 rounded"
+                title="বার্তাটি বন্ধ করুন"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           )}
 
