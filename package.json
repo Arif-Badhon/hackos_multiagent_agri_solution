@@ -1,0 +1,28 @@
+{
+  "name": "ondera-agro-mesh",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline-First Edge Multi-Agent Mesh for Ondera Smallholder Coffee Farmers",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"POSTGRES,BACKEND,FRONTEND\" -c \"blue,green,magenta\" \"npm run dev:db\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:db": "docker compose up postgres",
+    "dev:backend": "cd backend && (python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000 || uvicorn main:app --reload --host 0.0.0.0 --port 8000)",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "build:backend": "docker build -t ondera-backend ./backend",
+    "build:frontend": "docker build -t ondera-frontend ./frontend",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "db:up": "docker compose up postgres -d",
+    "db:down": "docker compose stop postgres",
+    "db:seed": "cd backend && python seed.py",
+    "install:all": "npm install && npm --prefix frontend install && cd backend && pip install -r requirements.txt"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
