@@ -2,7 +2,8 @@ import logging
 import uuid
 from typing import List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Form, File, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 
@@ -15,11 +16,59 @@ from schemas import (
     SyncBatchResponse,
     DashboardStats,
 )
-from agents.claude_orchestrator import generate_agronomic_advisory
+from agents.claude_orchestrator import (
+    generate_agronomic_advisory,
+    stream_bangladesh_agri_advice,
+)
 
 logger = logging.getLogger("ondera.routes.sync")
 
 router = APIRouter(prefix="/api/sync", tags=["Store-and-Forward Sync Gateway"])
+
+
+@router.post(
+    "/stream",
+    summary="Multimodal streaming advisory for DAE Bandarban coffee farmers",
+    description=(
+        "Streams real-time agronomic guidance in standard Bengali using Claude 3.5 Sonnet. "
+        "Accepts a farmer's Bangla audio transcript and an optional mobile camera snapshot of the crop."
+    ),
+)
+async def stream_dossier_advice(
+    transcript: str = Form(...),
+    image: Optional[UploadFile] = File(None),
+):
+    """
+    Multimodal streaming endpoint for mobile coffee farmers in Bandarban.
+    Accepts Bangla voice transcript and optional crop photograph, returning
+    a text/event-stream response powered by Anthropic's Claude 3.5 Sonnet.
+    """
+    image_bytes: Optional[bytes] = None
+    mime_type: Optional[str] = None
+
+    if image is not None:
+        try:
+            read_bytes = await image.read()
+            if read_bytes and len(read_bytes) > 0:
+                image_bytes = read_bytes
+                mime_type = image.content_type or "image/jpeg"
+                logger.info(f"Received image in stream request: {image.filename} ({len(image_bytes)} bytes)")
+        except Exception as e:
+            logger.warning(f"Failed to read uploaded image in /api/sync/stream: {e}")
+
+    return StreamingResponse(
+        stream_bangladesh_agri_advice(
+            transcript=transcript,
+            image_bytes=image_bytes,
+            mime_type=mime_type,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post(
