@@ -268,7 +268,7 @@ export default function DossierSync({
     }
   };
 
-  // Submission function streaming to Claude 3.5 Sonnet
+  // Submission function streaming to Claude Opus 5.5
   const streamToClaude = async () => {
     if (!transcript.trim() && !imageFile && !audioBlob) {
       setStreamError("অনুগ্রহ করে আপনার সমস্যার কথা বলুন, অডিও রেকর্ড করুন অথবা কফি ফসলের ছবি তুলুন।");
@@ -381,7 +381,7 @@ export default function DossierSync({
             ডিএই কফি রোগ নির্ণয় ও পরামর্শ টার্মিনাল
           </h2>
           <p className="text-xs text-emerald-200/70 mt-0.5">
-            ক্লদ ৩.৫ সননেট সমর্থিত রিয়েল-টাইম বাংলা কৃষি পরামর্শ ও স্বয়ংক্রিয় কমান্ড সেন্টার সিঙ্ক
+            ক্লদ ওপাস ৫.৫ সমর্থিত রিয়েল-টাইম বাংলা কৃষি পরামর্শ ও স্বয়ংক্রিয় কমান্ড সেন্টার সিঙ্ক
           </p>
         </div>
       </div>
@@ -430,7 +430,7 @@ export default function DossierSync({
                   ক্যামেরা দিয়ে কফি পাতা বা চেরির ছবি তুলুন
                 </div>
                 <p className="text-xs text-gray-500 dark:text-emerald-400/60 max-w-sm">
-                  মিলিবাগ, ডাইব্যাক বা পাতার হলুদ দাগের স্পষ্ট ছবি তুললে ক্লদ ৩.৫ সননেট নিখুঁতভাবে রোগ নির্ণয় করতে পারবে।
+                  মিলিবাগ, ডাইব্যাক বা পাতার হলুদ দাগের স্পষ্ট ছবি তুললে ক্লদ ওপাস ৫.৫ নিখুঁতভাবে রোগ নির্ণয় করতে পারবে।
                 </p>
                 <span className="inline-block mt-2 px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded-lg shadow-sm">
                   ছবি তুলুন / আপলোড করুন
@@ -635,12 +635,12 @@ export default function DossierSync({
             {isStreaming ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>ক্লদ ৩.৫ সননেট বিশ্লেষণ করছে ও লাইভ স্ট্রিম হচ্ছে...</span>
+                <span>ক্লদ ওপাস ৫.৫ বিশ্লেষণ করছে ও লাইভ স্ট্রিম হচ্ছে...</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                <span>ক্লদ ৩.৫ সননেট থেকে লাইভ পরামর্শ পান (Stream Advice)</span>
+                <span>ক্লদ ওপাস ৫.৫ থেকে লাইভ পরামর্শ পান (Stream Advice)</span>
               </>
             )}
           </button>

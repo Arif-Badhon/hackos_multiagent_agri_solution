@@ -11,7 +11,7 @@
 It combines:
 1. **Mobile Crop Camera Capture (`capture="environment"`)**: Farmers can snap clear photos of infected coffee leaves, mealybug clusters, and dying branches right in the field.
 2. **Native Bangla Voice Recognition (`webkitSpeechRecognition` with `bn-BD`)**: Farmers can speak their observations naturally in Bengali with zero typing required.
-3. **Anthropic Claude 3.5 Sonnet Multimodal Streaming**: Real-time streaming advice (`text/event-stream`) in standard Bengali specifically addressing Bandarban's agricultural constraints (Mealybugs, Dieback on Arabica, summer heat/shade management, and protection from predatory *farias* due to the lack of local pulping machines).
+3. **Anthropic Claude Opus 5.5 Multimodal Streaming**: Real-time streaming advice (`text/event-stream`) in standard Bengali specifically addressing Bandarban's agricultural constraints (Mealybugs, Dieback on Arabica, summer heat/shade management, and protection from predatory *farias* due to the lack of local pulping machines).
 4. **Offline Store-and-Forward Vault**: Safely preserves dossiers in the phone's persistent storage when scouting deep in mountain plots without signal.
 5. **DAE Extension Command Center**: A live monitoring dashboard for Department of Agricultural Extension (DAE) officers to triage regional outbreaks and protect smallholders.
 
@@ -52,7 +52,7 @@ Step 1: Open the Frontend App
 
 Step 2: Go to the Field Terminal
         Click the tab: "Farmer Noor Field Terminal (Offline Edge)".
-        You will see the "DAE Bandarban Coffee Agent - Claude 3.5 Sonnet" banner.
+        You will see the "DAE Bandarban Coffee Agent - Claude Opus 5.5" banner.
 
 Step 3: Test Camera Capture
         Click "ছবি তুলুন / আপলোড করুন".
@@ -65,8 +65,8 @@ Step 4: Speak in Bangla (Voice STT)
         Notice the text transcribes live into the Bangla textarea!
         (Tip: You can also click the quick pill "মিলিবাগ ও ডাইব্যাক" for an instant 1-click test).
 
-Step 5: Stream Advice from Claude 3.5 Sonnet
-        Click: "ক্লদ ৩.৫ সননেট থেকে লাইভ পরামর্শ পান (Stream Advice)".
+Step 5: Stream Advice from Claude Opus 5.5
+        Click: "ক্লদ ওপাস ৫.৫ থেকে লাইভ পরামর্শ পান (Stream Advice)".
         Watch as Claude streams customized advice in standard Bengali token-by-token:
         • Mealybug biological & neem control
         • Arabica dieback sanitization and copper paste treatment
@@ -90,7 +90,7 @@ Farmer snaps photo ──► Speaks in Bangla (bn-BD) ──► Stored safely in
 [Layer 2: Fast Multipart Transmission]
 When in network range ──► Transmits photo & audio transcript via POST /api/sync/stream
 
-[Layer 3: Claude 3.5 Sonnet Multimodal Streaming]
+[Layer 3: Claude Opus 5.5 Multimodal Streaming]
 FastAPI Gateway converts image to base64 ──► Claude streams Bengali tokens via Server-Sent Events
 
 [Layer 4: DAE District Headquarters]
@@ -145,5 +145,5 @@ In Bandarban, the lack of local wet-pulping machinery is the #1 economic bottlen
 ## 🏆 Summary for Hackathon Evaluators
 - **World Bank Development Focus**: Targets smallholder poverty alleviation, climate adaptation, and post-harvest market access in Bangladesh.
 - **True Offline-First Edge Architecture**: Works under zero-connectivity hill tract conditions.
-- **Multimodal Claude 3.5 Sonnet Streaming**: Combines mobile camera visual evidence with real-time streaming Bengali natural language advice.
+- **Multimodal Claude Opus 5.5 Streaming**: Combines mobile camera visual evidence with real-time streaming Bengali natural language advice.
 - **Production-Ready**: Deployed live on Vercel and Render with full test coverage.

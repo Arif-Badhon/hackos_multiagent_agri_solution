@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api/sync", tags=["Store-and-Forward Sync Gateway"])
     "/stream",
     summary="Multimodal streaming advisory for DAE Bandarban coffee farmers",
     description=(
-        "Streams real-time agronomic guidance in standard Bengali using Claude 3.5 Sonnet. "
+        "Streams real-time agronomic guidance in standard Bengali using Claude Opus 5.5. "
         "Accepts a farmer's Bangla audio transcript, voice recording, optional crop snapshot, "
         "and automatically persists the dossier into PostgreSQL for Extension Officers."
     ),

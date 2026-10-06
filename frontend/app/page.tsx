@@ -426,7 +426,7 @@ export default function Home() {
                         <div className="flex items-center space-x-2">
                           <Sparkles className="w-5 h-5 text-emerald-400" />
                           <h3 className="text-sm font-bold text-white tracking-wide">
-                            Claude 3.7 Agronomic Intelligence Advisory
+                            Claude Opus 5.5 Agronomic Intelligence Advisory
                           </h3>
                         </div>
                         <span className="text-[10px] text-emerald-300 font-mono bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-700">

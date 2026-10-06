@@ -99,7 +99,7 @@ async def stream_bangladesh_agri_advice(
     mime_type: Optional[str] = None,
 ) -> AsyncGenerator[str, None]:
     """
-    Streams localized Bengali agricultural advice using Claude 3.5 Sonnet.
+    Streams localized Bengali agricultural advice using Claude Opus 5.5.
     Takes a Bangla audio transcript and optional crop photograph, applying multimodal
     reasoning tailored to the agronomic constraints of Bandarban, Bangladesh.
     """
@@ -143,12 +143,9 @@ async def stream_bangladesh_agri_advice(
         "text": cleaned_transcript,
     })
 
-    # Model resolution: prioritize Claude 3.5 Sonnet
+    # Model resolution: prioritize Claude Opus 5.5
     configured_model = os.getenv("CLAUDE_MODEL", "").strip()
-    if configured_model and ("3-5-sonnet" in configured_model or "3-7-sonnet" in configured_model or "claude-3" in configured_model):
-        model_name = configured_model
-    else:
-        model_name = "claude-3-5-sonnet-20241022"
+    model_name = configured_model if configured_model else "claude-opus-5-5"
 
     logger.info(f"Streaming DAE Bandarban advisory via Claude model: {model_name}")
 
@@ -270,11 +267,9 @@ async def generate_agronomic_advisory(dossier_data: Any) -> ClaudeAdvisoryResult
             altitude=altitude,
         )
 
+    # Model resolution: prioritize Claude Opus 5.5
     configured_model = os.getenv("CLAUDE_MODEL", "").strip()
-    if configured_model and ("3-5-sonnet" in configured_model or "3-7-sonnet" in configured_model or "claude-3" in configured_model):
-        model_name = configured_model
-    else:
-        model_name = "claude-3-5-sonnet-20241022"
+    model_name = configured_model if configured_model else "claude-opus-5-5"
 
     # Prepare message for Claude API
     user_prompt = f"""Incoming SyncDossier Payload:

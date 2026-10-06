@@ -9,7 +9,7 @@
 [![Backend: FastAPI](https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.11+-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Streaming: SSE](https://img.shields.io/badge/Streaming-text%2Fevent--stream-00c853?style=flat)](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
 [![Database: PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%2015%20(Docker)-336791?style=flat&logo=postgresql)](https://www.postgresql.org)
-[![AI: Anthropic Claude 3.5](https://img.shields.io/badge/Intelligence-Anthropic%20Claude%203.5%20Sonnet%20(Multimodal)-d97706?style=flat&logo=anthropic)](https://www.anthropic.com)
+[![AI: Anthropic Claude Opus 5.5](https://img.shields.io/badge/Intelligence-Anthropic%20Claude%20Opus%205.5%20(Multimodal)-d97706?style=flat&logo=anthropic)](https://www.anthropic.com)
 [![Voice: Web Speech API](https://img.shields.io/badge/Speech%20Recognition-Bangla%20(bn--BD)-blue?style=flat)](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition)
 [![Deployment: Vercel Ready](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Cloud%20Containers-blue?style=flat&logo=vercel)](https://vercel.com)
 
@@ -29,7 +29,7 @@
 1. [Executive Summary & Bangladesh Coffee Context](#-executive-summary--bangladesh-coffee-context)
 2. [Local Constraints & The DAE Bandarban Challenge](#-local-constraints--the-dae-bandarban-challenge)
 3. [High-Level System Architecture](#-high-level-system-architecture)
-4. [Multimodal Streaming Pipeline with Claude 3.5 Sonnet](#-multimodal-streaming-pipeline-with-claude-35-sonnet)
+4. [Multimodal Streaming Pipeline with Claude Opus 5.5](#-multimodal-streaming-pipeline-with-claude-opus-55)
 5. [Native Bangla Voice & Camera Interface](#-native-bangla-voice--camera-interface)
 6. [Offline-First Store-and-Forward Topology](#-offline-first-store-and-forward-topology)
 7. [Tech Stack & Engineering Decisions](#-tech-stack--engineering-decisions)
@@ -59,7 +59,7 @@ KrishiKotha AI addresses these acute bottlenecks through a unified edge multi-ag
 
 - **Mobile Camera Capture (`capture="environment"`)**: Mobile-first photo capture of foliar symptoms, mealybug clusters, and cherry dieback.
 - **Native Bangla Speech Recognition (`bn-BD`)**: High-accuracy spoken Bengali transcription directly in the mobile browser using the native Web Speech API.
-- **Anthropic Claude 3.5 Sonnet Multimodal Streaming**: Real-time server-sent events (`text/event-stream`) streaming actionable agronomic guidance in standard Bengali directly to the farmer.
+- **Anthropic Claude Opus 5.5 Multimodal Streaming**: Real-time server-sent events (`text/event-stream`) streaming actionable agronomic guidance in standard Bengali directly to the farmer.
 - **Offline Store-and-Forward Vault**: Caches field observations locally in browser IndexedDB/LocalStorage when deep in the hills, synchronizing when entering mesh or cellular range.
 - **DAE Extension Command Center**: Aggregates synchronized field dossiers, triages disease outbreaks, and tracks fair pricing against exploitative *farias*.
 
@@ -69,7 +69,7 @@ KrishiKotha AI addresses these acute bottlenecks through a unified edge multi-ag
 
 | Local Challenge in Bandarban | Agronomic / Market Impact | KrishiKotha AI Countermeasure |
 | :--- | :--- | :--- |
-| **Mealybug (মিলিবাগ) Infestation** | Waxy white insect clusters feed on tender shoots and cherry stems, transmitting sooty mold. | Visual image detection via Claude 3.5 Sonnet; organic neem-oil detergent spray protocol and biological ant-barrier instructions. |
+| **Mealybug (মিলিবাগ) Infestation** | Waxy white insect clusters feed on tender shoots and cherry stems, transmitting sooty mold. | Visual image detection via Claude Opus 5.5; organic neem-oil detergent spray protocol and biological ant-barrier instructions. |
 | **Arabica Dieback (ডাইব্যাক)** | Fungal pathogen (*Colletotrichum*) aggravated by heat stress causes terminal twigs to dry and turn black. | Pruning 2-3 inches below infected wood, flame sanitization, and copper oxychloride paste application. |
 | **High Summer Heat & Sun Scorch** | Extreme temperatures cause blossom drop and sunburned cherries. | Micro-climate recommendations: 50% shade canopy management (Albizia/banana trees) and organic grass mulching. |
 | **Post-Harvest Pulping & Drying Deficit** | Lack of wet pulping machines forces immediate sale of perishable raw cherries. | Community cooperative solar drying guidance to produce dry cherry/parchment, preventing distressed sales to *farias*. |
@@ -95,8 +95,8 @@ graph TD
         H --> I[(PostgreSQL 15 DB)]
     end
 
-    subgraph Intelligence Layer [Anthropic Claude 3.5 Sonnet]
-        G -->|Base64 Image + Bangla Transcript| J[Claude 3.5 Sonnet Multimodal]
+    subgraph Intelligence Layer [Anthropic Claude Opus 5.5]
+        G -->|Base64 Image + Bangla Transcript| J[Claude Opus 5.5 Multimodal]
         J -->|System Prompt: DAE Bandarban Persona| K[Async Token Streaming Engine]
         K -->|text/event-stream Chunks| D
         H -->|Store-and-Forward Telemetry| L[JSON Advisory Synthesis]
@@ -113,7 +113,7 @@ graph TD
 
 ---
 
-## ⚡ Multimodal Streaming Pipeline with Claude 3.5 Sonnet
+## ⚡ Multimodal Streaming Pipeline with Claude Opus 5.5
 
 The streaming architecture is engineered for low-latency feedback over unstable hill-tract network uplinks:
 
@@ -129,7 +129,7 @@ The streaming architecture is engineered for low-latency feedback over unstable 
       ├─► Formats multimodal content block: [{"type": "image", ...}, {"type": "text", ...}]
       │
       ▼  (client.messages.stream)
-[Anthropic Claude 3.5 Sonnet]
+[Anthropic Claude Opus 5.5]
       │  Strict System Persona:
       │  "You are an AI agricultural extension officer for the DAE in Bandarban, Bangladesh.
       │   Analyze the farmer's visual evidence and Bangla audio transcript. Address local
@@ -187,7 +187,7 @@ When scouting deep in mountain plots with zero connectivity:
 | **Styling** | **Tailwind CSS (Agricultural Dark/Light)** | Clean, high-contrast greens (`#0A281B`, `#10B981`) designed for outdoor sunlight visibility. |
 | **Backend Framework** | **FastAPI (Python 3.11+)** | High-performance asynchronous ASGI server supporting native streaming responses and SSE. |
 | **Multipart Parsing** | **`python-multipart`** | Efficient asynchronous parsing of image uploads and audio transcripts. |
-| **AI Intelligence** | **Anthropic Claude 3.5 Sonnet** | Multimodal image understanding + fluent standard Bengali agronomic reasoning. |
+| **AI Intelligence** | **Anthropic Claude Opus 5.5** | Multimodal image understanding + fluent standard Bengali agronomic reasoning. |
 | **Database & ORM** | **PostgreSQL 15 + SQLAlchemy 2.0 (Async) + asyncpg** | Non-blocking database I/O with connection pooling for store-and-forward dossier triage. |
 
 ---
@@ -290,7 +290,7 @@ Ensure your Anthropic API Key is set in `backend/.env`:
 
 ```env
 ANTHROPIC_API_KEY=sk-ant-api03-...
-CLAUDE_MODEL=claude-3-5-sonnet-20241022
+CLAUDE_MODEL=claude-opus-5-5
 ```
 
 *(If no API key is provided, the system seamlessly activates the built-in domain fallback streaming engine in Bengali).*
@@ -329,7 +329,7 @@ Follow these steps to evaluate the multimodal streaming and offline mesh capabil
 ```
 [Step 1] Open http://localhost:3000 in your browser.
          Switch to Tab 2: "Farmer Noor Field Terminal (Offline Edge)".
-         Notice the header: "DAE Bandarban Coffee Agent - Claude 3.5 Sonnet".
+         Notice the header: "DAE Bandarban Coffee Agent - Claude Opus 5.5".
 
 [Step 2] Test Multimodal Camera Input:
          Click "ছবি তুলুন / আপলোড করুন" to snap a crop photo or select an image.
@@ -341,8 +341,8 @@ Follow these steps to evaluate the multimodal streaming and offline mesh capabil
          Notice the text flows live into the Bangla textarea!
          (Alternative: Click the quick scenario pill "মিলিবাগ ও ডাইব্যাক" for instant 1-click test).
 
-[Step 4] Trigger Claude 3.5 Sonnet Live Streaming:
-         Click the glowing green button: "ক্লদ ৩.৫ সননেট থেকে লাইভ পরামর্শ পান (Stream Advice)".
+[Step 4] Trigger Claude Opus 5.5 Live Streaming:
+         Click the glowing green button: "ক্লদ ওপাস ৫.৫ থেকে লাইভ পরামর্শ পান (Stream Advice)".
          Watch the streaming card appear as Claude delivers advice in standard Bengali live token-by-token:
          - 1. Mealybug management & organic neem protocols
          - 2. Arabica Dieback pruning & copper oxychloride paste
@@ -380,7 +380,7 @@ docker build -t ondera-backend ./backend
 docker run -p 8000:8000 \
   -e DATABASE_URL="postgresql+asyncpg://user:pass@host:5432/onderadb" \
   -e ANTHROPIC_API_KEY="sk-ant-..." \
-  -e CLAUDE_MODEL="claude-3-5-sonnet-20241022" \
+  -e CLAUDE_MODEL="claude-opus-5-5" \
   -e CORS_ORIGINS="https://your-app.vercel.app,http://localhost:3000" \
   ondera-backend
 ```
@@ -407,7 +407,7 @@ krishikotha-ai/
 │   ├── seed.py                     # Seed script for realistic coffee dossiers
 │   ├── agents/
 │   │   ├── __init__.py
-│   │   └── claude_orchestrator.py  # Claude 3.5 Sonnet multimodal streaming & fallback
+│   │   └── claude_orchestrator.py  # Claude Opus 5.5 multimodal streaming & fallback
 │   └── routes/
 │       ├── __init__.py
 │       └── sync.py                 # POST /api/sync/stream, batch sync & stats
